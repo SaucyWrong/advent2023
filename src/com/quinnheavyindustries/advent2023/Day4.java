@@ -2,27 +2,43 @@ package com.quinnheavyindustries.advent2023;
 
 import com.quinnheavyindustries.util.Utils;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Day4 {
 
     public static void main(String[] args) {
-        var solution = Utils.loadLines("day4-puzzle-input").stream()
+        SortedMap<Integer, Scratcher> scratchers = Utils.loadLines("day4-puzzle-input").stream()
                 .map(Scratcher::new)
-                .mapToInt(Scratcher::getCardScore)
+                .collect(Collectors.toMap(s -> s.cardNumber, Function.identity(), (s1, s2) -> s1, TreeMap::new));
+
+        scratchers.forEach((cardNumber, scratcher) -> {
+            var winningNumbers = scratcher.getMatchingNumbers();
+            var copyFactor = scratcher.copies;
+            System.out.printf("Card %d has %d copies and %d matching numbers: %s\n",
+                    cardNumber, copyFactor, winningNumbers.size(), winningNumbers);
+            var copyStart = cardNumber + 1;
+            var copyEnd = copyStart + winningNumbers.size();
+            for (var i = copyStart; i < copyEnd; i++) {
+                scratchers.get(i).copies += copyFactor;
+                System.out.printf("Card %d...adding %d...now has %d copies\n", i, copyFactor, scratchers.get(i).copies);
+            }
+        });
+
+        var solution = scratchers.values().stream()
+                .mapToInt(s -> s.copies)
                 .sum();
-        System.out.printf("solution: %d\n", solution);
+        System.out.printf("Solution: %d\n", solution);
     }
 
     public static class Scratcher {
 
-        private static final Pattern cardNumberMatcher = Pattern.compile("Card (\\d+):");
+        private static final Pattern cardNumberMatcher = Pattern.compile("Card\\W+(\\d+):");
 
         public int cardNumber;
+        public int copies = 1;
         public Set<Integer> winningNumbers;
         public Set<Integer> yourNumbers;
 
@@ -39,20 +55,6 @@ public class Day4 {
             return yourNumbers.stream().filter(winningNumbers::contains).collect(Collectors.toList());
         }
 
-        public int getCardScore() {
-            return switch (getMatchingNumbers().size()) {
-                case 0 -> 0;
-                case 1 -> 1;
-                default -> {
-                    var points = 2;
-                    for (var i = 2; i < getMatchingNumbers().size(); i++) {
-                        points *= 2;
-                    }
-                    yield points;
-                }
-            };
-        }
-
         private void parseScratcherInput(String input) {
             var tokens = input.split(":");
             var numbers = tokens[1];
@@ -65,9 +67,6 @@ public class Day4 {
             var numberTokens = numbers.split("\\|");
             winningNumbers = toIntegerSet(numberTokens[0].trim().split("\\s+"));
             yourNumbers = toIntegerSet(numberTokens[1].trim().split("\\s+"));
-
-            System.out.printf("Card %d: winning numbers: %s, your numbers: %s\n", cardNumber, winningNumbers, yourNumbers);
-            System.out.printf("matching numbers: %s, points: %d\n", getMatchingNumbers(), getCardScore());
         }
 
         private static Set<Integer> toIntegerSet(String[] tokens) {

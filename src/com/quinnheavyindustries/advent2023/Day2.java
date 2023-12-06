@@ -20,8 +20,7 @@ public class Day2 {
                 .filter(line -> !line.isEmpty())
                 .map(String::toLowerCase)
                 .map(GameResult::fromGameRecord)
-                .filter(GameResult::isGamePossible)
-                .mapToInt(result -> result.gameId)
+                .mapToInt(GameResult::getCubePower)
                 .sum();
         System.out.println("\nSolution: " + solution + "\n");
     }
@@ -48,6 +47,10 @@ public class Day2 {
                             .allMatch(entry -> entry.getValue() <= gameConstraints.getOrDefault(entry.getKey(), 0));
         }
 
+        public int getCubePower() {
+            return maxSampled.values().stream().reduce(1, (a, b) -> a * b);
+        }
+
         private void splitAndProcessGameSamples(String gameRecord) {
             var colonSplit = gameRecord.split(":");
             var gameIdMatcher = gameIdPattern.matcher(colonSplit[0]);
@@ -57,8 +60,8 @@ public class Day2 {
 
             List<String> bagDraws = List.of(colonSplit[1].split(";"));
             bagDraws.forEach(this::processBagDraws);
-            System.out.printf("input --> %s\n\t Game ID: %d: %s, possible: %s\n",
-                    gameRecord, gameId, maxSampled, this.isGamePossible()
+            System.out.printf("input --> %s\n\t Game ID: %d: max cube draws: %s, cube power: %d, possible: %s\n",
+                    gameRecord, gameId, maxSampled, getCubePower(), isGamePossible()
             );
         }
 

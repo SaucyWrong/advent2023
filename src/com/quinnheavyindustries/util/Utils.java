@@ -9,14 +9,24 @@ import java.util.List;
 
 public class Utils {
 
+    public static String readInputAsString(String filename) {
+        try (var inputStream = loadStream(filename)) {
+            if (inputStream != null) {
+                return new String(inputStream.readAllBytes());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return "";
+    }
+
     public static InputStream loadStream(String filename) {
         var loader = Thread.currentThread().getContextClassLoader();
         return loader.getResourceAsStream(filename);
     }
 
     public static List<String> loadLines(String filename) {
-        var loader = Thread.currentThread().getContextClassLoader();
-        try (var inputStream = loader.getResourceAsStream(filename)) {
+        try (var inputStream = loadStream(filename)) {
             if (inputStream != null) {
                 var reader = new BufferedReader(new InputStreamReader(inputStream));
                 return reader.lines().toList();

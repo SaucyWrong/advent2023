@@ -14,13 +14,11 @@ public class Day3 {
     }
 
     public static class EngineSchematicAnalyzer {
-        private static final Pattern symbolDetector = Pattern.compile("([^_a-zA-Z0-9.])");
+        private static final Pattern gearMatcher = Pattern.compile("(\\*)");
         private static final Pattern partNumberDetector = Pattern.compile("(\\d+)");
 
         private int currentY;
-        private final Set<String> symbols = new HashSet<>();
-        private final List<String> nonUniqueParts = new ArrayList<>();
-        private final SortedSet<Point> symbolCoordinates = new TreeSet<>();
+        private final SortedSet<Point> potentialGears = new TreeSet<>();
         private final SortedMap<Point, String> partsTable = new TreeMap<>();
 
         public void analyze(String filename) {
@@ -28,25 +26,28 @@ public class Day3 {
             List<String> lines = Utils.loadLines(filename);
             lines.forEach(line -> {
                 System.out.printf("%d: %s\n", currentY, line);
-                updateSymbolSet(line, currentY);
+                updatePotentialGears(line, currentY);
                 updatePartsTable(line, currentY);
                 currentY++;
             });
-            System.out.printf("Symbols: %s\n", symbols);
-            System.out.printf("Non-unique parts: %s\n", nonUniqueParts.size());
-            System.out.printf("Unique parts: %s\n", new HashSet<>(nonUniqueParts).size());
 
-            var solution = getConnectedParts().stream()
-                    .mapToInt(Integer::parseInt)
+            var solution = potentialGears.stream()
+                    .map(this::calculateGearRatio)
+                    .filter(Optional::isPresent)
+                    .mapToInt(Optional::get)
                     .sum();
             System.out.printf("Solution: %d\n", solution);
         }
 
-        public List<String> getConnectedParts() {
-            return symbolCoordinates.stream()
-                    .map(this::getPartsConnectedToPoint)
-                    .flatMap(Set::stream)
-                    .collect(Collectors.toList());
+        public Optional<Integer> calculateGearRatio(Point point) {
+            var connectedParts = getPartsConnectedToPoint(point).toArray(new String[0]);
+            if (connectedParts.length != 2) {
+                return Optional.empty();
+            }
+            var part1 = Integer.parseInt(connectedParts[0]);
+            var part2 = Integer.parseInt(connectedParts[1]);
+            System.out.printf("Found gear at %s with ratio %d * %d = %d\n", point, part1, part2, part1 * part2);
+            return Optional.of(part1 * part2);
         }
 
         public Set<String> getPartsConnectedToPoint(Point point) {
@@ -56,13 +57,12 @@ public class Day3 {
                     .collect(Collectors.toSet());
         }
 
-        private void updateSymbolSet(String line, int lineNumber) {
-            var symbolMatcher = symbolDetector.matcher(line);
-            while (symbolMatcher.find()) {
-                var symbolPoint = new Point(symbolMatcher.start(), lineNumber);
-                symbolCoordinates.add(symbolPoint);
-                symbols.add(symbolMatcher.group(1));
-                System.out.printf("Symbol %s found at %s\n", symbolMatcher.group(1), symbolPoint);
+        private void updatePotentialGears(String line, int lineNumber) {
+            var matcher = gearMatcher.matcher(line);
+            while (matcher.find()) {
+                var symbolPoint = new Point(matcher.start(), lineNumber);
+                potentialGears.add(symbolPoint);
+                System.out.printf("Potential Gear found at %s\n", symbolPoint);
             }
         }
 
@@ -70,7 +70,6 @@ public class Day3 {
             var partMatcher = partNumberDetector.matcher(line);
             while (partMatcher.find()) {
                 var partName = partMatcher.group(1);
-                nonUniqueParts.add(partName);
                 var partOrigin = new Point(partMatcher.start(), lineNumber);
                 var partPoints = partOrigin.getHorizontalRange(partName.length());
                 System.out.printf("Part %s found at %s\n", partName, partOrigin);

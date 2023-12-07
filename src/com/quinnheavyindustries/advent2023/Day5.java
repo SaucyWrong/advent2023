@@ -2,17 +2,26 @@ package com.quinnheavyindustries.advent2023;
 
 import com.quinnheavyindustries.util.Utils;
 
+import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Day5 {
 
+    private static long totalSeedStock = 0;
+    private static AtomicLong progress = new AtomicLong(0);
+
     public static void main(String[] args) {
+        var startTime = System.currentTimeMillis();
         String inputData = Utils.readInputAsString("day5-puzzle-input");
         var sections = Arrays.stream(inputData.split("\\n\\n")).toList();
-        var seedValues = extractSeedValues(sections.getFirst());
+        var seedValues = extractSeedBatches(sections.getFirst());
         System.out.println("Seed values: " + seedValues);
+        totalSeedStock = seedValues.stream().mapToLong(SeedBatch::size).sum();
+
 
         System.out.println("Configuring Almanac Mappers...");
         var almanacMappers = sections.subList(1, sections.size()).stream()
@@ -21,22 +30,29 @@ public class Day5 {
                 .collect(Collectors.toMap(AlmanacMapper::name, Function.identity(), (a, b) -> a, LinkedHashMap::new));
 
         var almanac = new Almanac(almanacMappers);
-        System.out.println("Translating seed values...");
-        var translatedSeedValues = seedValues.stream()
-                .peek(value -> System.out.println("Translating seed value: " + value))
+        System.out.printf("Translating %d seed values...\n", totalSeedStock);
+        var minimumLocationValue = seedValues.stream()
+                .flatMap(SeedBatch::streamSeedValues)
                 .map(almanac::fullyTranslateValue)
-                .sorted()
-                .toList();
+                .min(Long::compareTo)
+                .orElseThrow();
 
-        System.out.println("Final location values: " + translatedSeedValues);
-        System.out.println("Solution: " + translatedSeedValues.getFirst());
+        System.out.println("Smallest Location: " + minimumLocationValue);
+        System.out.println("Solution: " + minimumLocationValue);
+        var endTime = System.currentTimeMillis();
+        var duration = Duration.ofMillis(endTime - startTime);
+        System.out.println("Duration: " + duration);
     }
 
-    private static List<Long> extractSeedValues(String seedSection) {
+    private static List<SeedBatch> extractSeedBatches(String seedSection) {
         var stringValues = seedSection.replace("seeds: ", "").split("\\W+");
-        return Arrays.stream(stringValues)
-                .map(Long::parseLong)
-                .toList();
+        var batches = new ArrayList<SeedBatch>();
+        for (int i = 0; i < stringValues.length; i += 2) {
+            var batch = new SeedBatch(Long.parseLong(stringValues[i]), Long.parseLong(stringValues[i + 1]));
+            System.out.println("Seed batch: " + batch);
+            batches.add(batch);
+        }
+        return batches;
     }
 
     private static AlmanacMapper extractAlmanacMap(String section) {
@@ -54,12 +70,20 @@ public class Day5 {
         return new AlmanacMapper(name, ranges);
     }
 
+    public record SeedBatch(long initialValue, long size) {
+        // return a parallel stream of seed values
+        public Stream<Long> streamSeedValues() {
+            return Stream.iterate(initialValue, i -> i + 1).limit(size);
+        }
+    }
+
     public record Almanac(Map<String, AlmanacMapper> mappers) {
         public long fullyTranslateValue(long value) {
             for (AlmanacMapper mapper : mappers.values()) {
-                var input = value;
                 value = mapper.translate(value);
-                System.out.println(input + " -> " + mapper.name + " -> " + value);
+            }
+            if (progress.incrementAndGet() % 10000000 == 0) {
+                System.out.printf("(%.2f%%)\n", (float) progress.get() / totalSeedStock * 100);
             }
             return value;
         }

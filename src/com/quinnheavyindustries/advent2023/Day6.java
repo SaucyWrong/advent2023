@@ -3,6 +3,7 @@ package com.quinnheavyindustries.advent2023;
 import com.quinnheavyindustries.util.Utils;
 
 import java.util.Arrays;
+import java.util.stream.Stream;
 
 public class Day6 {
 
@@ -21,22 +22,25 @@ public class Day6 {
                 .reduce(String::concat)
                 .orElseThrow();
 
-        var solution = simulateRace(Long.parseLong(raceTimeString), Long.parseLong(distanceString));
+        var approximateRoots = solveRaceEquation(Long.parseLong(raceTimeString), Long.parseLong(distanceString));
+        var solution = approximateRoots[1] - approximateRoots[0] + 1;
 
-        System.out.printf("\nSolution: %d\n", solution);
+        System.out.printf("\nSolution: %d\n", ((Double) solution).longValue());
     }
 
-    public static int simulateRace(long time, long distanceToBeat) {
+    public static double[] solveRaceEquation(long time, long distanceToBeat) {
         System.out.printf("Race: time=%d, distanceToBeat=%d\n", time, distanceToBeat);
-        var racesWon = 0;
-        for (int i = 1; i < time; i++) {
-            var distanceAchieved = i * (time - i);
-            if (distanceAchieved > distanceToBeat) {
-                racesWon++;
-            }
-        }
-        System.out.printf("--- winning solutions: %d ---\n", racesWon);
-        return racesWon;
+        long a = -1;
+        long b = time;
+        long c = (-1 * distanceToBeat);
+
+        double sqrt = Math.sqrt(b * b - 4 * a * c);
+        var solution1 = (-b + sqrt) / (2 * a);
+        var solution2 = (-b - sqrt) / (2 * a);
+
+        var roots = new double[]{Math.floor(++solution1), Math.ceil(--solution2)};
+        System.out.printf("--- nearest whole numbers inside roots: %s ---\n", Arrays.toString(roots));
+        return roots;
     }
 
 }

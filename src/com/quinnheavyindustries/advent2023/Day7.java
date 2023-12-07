@@ -52,12 +52,35 @@ public class Day7 {
                 countedCards.compute(cardValue(card), (k, v) -> v == null ? 1 : v + 1);
             }
 
+            applyJokers();
+
             this.encodedHand = countedCards.values().stream()
                     .filter(v -> v > 0)
                     .sorted(Comparator.reverseOrder())
                     .map(String::valueOf)
                     .collect(Collectors.joining());
             System.out.println(this);
+        }
+
+        public void applyJokers() {
+            if (!countedCards.containsKey(cardValue('J'))) { // there are no jokers in the hand
+                return;
+            }
+
+            var jokerCount = countedCards.get(cardValue('J'));
+            if (jokerCount == 5) { // nothing can be done with this hand
+                return;
+            }
+            countedCards.remove(cardValue('J'));
+
+            var highestCardCount = countedCards.values().stream().max(Integer::compareTo).orElseThrow();
+            var targetCardValue = countedCards.entrySet().stream()
+                    .filter(e -> Objects.equals(e.getValue(), highestCardCount))
+                    .map(Map.Entry::getKey)
+                    .findFirst()
+                    .orElseThrow();
+
+            countedCards.compute(targetCardValue, (k, v) -> v + jokerCount);
         }
 
         public int handStrength() {
@@ -78,7 +101,7 @@ public class Day7 {
                 case 'A' -> 14;
                 case 'K' -> 13;
                 case 'Q' -> 12;
-                case 'J' -> 11;
+                case 'J' -> -1; // joker
                 case 'T' -> 10;
                 default -> card - '0';
             };

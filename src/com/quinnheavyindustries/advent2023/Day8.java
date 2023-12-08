@@ -2,9 +2,9 @@ package com.quinnheavyindustries.advent2023;
 
 import com.quinnheavyindustries.util.Utils;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class Day8 {
 
@@ -14,29 +14,43 @@ public class Day8 {
     public static void main(String[] args) {
         var input = Utils.readInputAsString("day8-puzzle-input").lines().toList();
         var navigationSet = input.getFirst();
-        System.out.printf("Navigation set: %s\n", navigationSet);
+        System.out.printf("Navigation set: %d instructions\n", navigationSet.length());
 
         input.stream().skip(2).forEach(Day8::addNodes);
+        System.out.printf("Created %d nodes\n", graph.size());
 
-        var currentNode = graph.get("AAA");
-        var targetNode = graph.get("ZZZ");
-        System.out.printf("--- Starting node: %s, Target node: %s ---\n", currentNode, targetNode);
+        var currentNodes = graph.values().stream()
+                .filter(k -> k.label.endsWith("A"))
+                .collect(Collectors.toList());
+        var potentialTerminals = graph.values().stream()
+                .filter(Node::isTerminal)
+                .collect(Collectors.toSet());
+        System.out.printf("--- Found %d starting nodes that end with 'A' (%s)---\n", currentNodes.size(), currentNodes);
+        System.out.printf("--- Found %d potential terminal nodes (%s)---\n", potentialTerminals.size(), potentialTerminals);
 
-        var steps = 0;
-        while (currentNode != targetNode) {
-            for (var i = 0; i < navigationSet.length(); i++) {
-                var nav = navigationSet.charAt(i);
-                currentNode = currentNode.next(nav);
-//                System.out.printf("Navigating '%s' to %s\n", nav, currentNode);
-                steps++;
+        System.out.println("--- Exploring graph one traveler at a time ---");
+        var cycles = new HashMap<String, Long>();
 
-                if (currentNode.isTerminal() && currentNode != targetNode) {
-                    throw new RuntimeException("reached an unexpected dead end");
+        currentNodes.forEach(node -> {
+            System.out.println("Exploring using " + node);
+            String startLabel = node.label;
+            long steps = 0;
+            boolean cycleFound = false;
+            while (steps <= 1_000_000 && !cycleFound) {
+                for (var i = 0; i < navigationSet.length(); i++) {
+                    var nav = navigationSet.charAt(i);
+                    node = node.next(nav);
+                    steps++;
+                    if (node.isTerminal()) {
+                        cycleFound = true;
+                        System.out.printf("node %s reached terminal node %s in %d steps\n", startLabel, node, steps);
+                        cycles.put(startLabel + "-->" + node.label, steps);
+                    }
                 }
             }
-        }
-
-        System.out.printf("--- Reached target node '%s' in %d steps ---\n", targetNode, steps);
+        });
+        System.out.printf("--- Finished exploring graph...found cycle lengths %s ---", cycles.values());
+        // at this point I gave up and just punch lcm(...) into wolfram alpha
     }
 
     static void addNodes(String inputString) {
@@ -48,8 +62,6 @@ public class Day8 {
             var newNode = getOrCreateNode(self);
             newNode.left = getOrCreateNode(left);
             newNode.right = getOrCreateNode(right);
-
-            System.out.printf("Added node: %s, total graph size:%d\n", newNode, graph.size());
         });
     }
 
@@ -81,8 +93,7 @@ public class Day8 {
         }
 
         boolean isTerminal() {
-            return (left == null && right == null) ||
-                    (left == this && right == this);
+            return label.endsWith("Z");
         }
 
         @Override

@@ -15,7 +15,7 @@ public class Day9 {
                 .toList();
 
         var result = sequences.stream()
-                .mapToLong(Day9::deriveNextValue)
+                .mapToLong(Day9::derivePreviousValue)
                 .sum();
 
         System.out.println("Result: " + result);
@@ -27,7 +27,7 @@ public class Day9 {
                 .toList();
     }
 
-    static long deriveNextValue(List<Long> inputSequence) {
+    static long derivePreviousValue(List<Long> inputSequence) {
         List<List<Long>> intermediateSequences = new LinkedList<>();
         intermediateSequences.add(List.copyOf(inputSequence));
         System.out.println("Deriving: " + inputSequence);
@@ -43,7 +43,7 @@ public class Day9 {
         }
 
         var result = intermediateSequences.reversed().stream()
-                .mapToLong(List::getLast).sum();
+                .mapToLong(List::getFirst).reduce((a, b) -> b - a).orElseThrow();
         System.out.println("Next number in sequence: " + result);
 
         return result;

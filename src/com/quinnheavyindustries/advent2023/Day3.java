@@ -1,5 +1,6 @@
 package com.quinnheavyindustries.advent2023;
 
+import com.quinnheavyindustries.util.Point;
 import com.quinnheavyindustries.util.Utils;
 
 import java.util.*;
@@ -51,7 +52,7 @@ public class Day3 {
         }
 
         public Set<String> getPartsConnectedToPoint(Point point) {
-            return point.getNeighbors().stream()
+            return point.getAllNeighbors().stream()
                     .map(partsTable::get)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toSet());
@@ -79,33 +80,4 @@ public class Day3 {
         }
     }
 
-    public record Point(int x, int y) implements Comparable<Point> {
-        public List<Point> getNeighbors() {
-            return List.of(
-                    new Point(x - 1, y - 1),
-                    new Point(x, y - 1),
-                    new Point(x + 1, y - 1),
-                    new Point(x - 1, y),
-                    new Point(x + 1, y),
-                    new Point(x - 1, y + 1),
-                    new Point(x, y + 1),
-                    new Point(x + 1, y + 1)
-            );
-        }
-
-        public List<Point> getHorizontalRange(int length) {
-            List<Point> result = new ArrayList<>();
-            for (int i = 0; i < length; i++) {
-                result.add(new Point(x + i, y));
-            }
-            return result;
-        }
-
-        @Override
-        public int compareTo(Point o) {
-            return Comparator.comparingInt(Point::y)
-                    .thenComparingInt(Point::x)
-                    .compare(this, o);
-        }
-    }
 }

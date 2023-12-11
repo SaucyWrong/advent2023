@@ -49,6 +49,10 @@ public record Point(int x, int y) implements Comparable<Point> {
         return x > other.x();
     }
 
+    public long gridDistanceTo(Point other) {
+        return Math.abs(x - other.x()) + Math.abs(y - other.y());
+    }
+
     @Override
     public int compareTo(Point o) {
         return Comparator.comparingInt(Point::y)

@@ -1,23 +1,25 @@
 package com.quinnheavyindustries.advent2023;
 
 import com.quinnheavyindustries.util.Utils;
+import org.graalvm.collections.Pair;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-import java.util.regex.Pattern;
+import java.util.Map;
 
 import static java.lang.System.out;
 
 public class Day12 {
 
-    static Pattern questionMarkMatcher = Pattern.compile("\\?");
+    static Map<Pair<String, List<Integer>>, Long> memoizer = new HashMap<>();
 
     public static void main(String[] args) {
         var start = System.nanoTime();
         var lines = Utils.loadLines("day12-puzzle");
         var hotSprings = lines.stream()
+                .map(Day12::unfoldConfigString)
                 .map(line -> line.split("\\s+"))
                 .toList();
 
@@ -34,19 +36,7 @@ public class Day12 {
                 .map(Integer::parseInt)
                 .toList();
 
-        var unknownSymbolLocations = new ArrayList<Integer>();
-        var matcher = questionMarkMatcher.matcher(symbolMap);
-        while (matcher.find()) {
-            unknownSymbolLocations.add(matcher.start());
-        }
-        var numCombos = Double.valueOf(Math.pow(2, unknownSymbolLocations.size())).intValue();
-
-        out.printf("map: %s, brokenSpringGroups: %s, Unknown symbol locations: %s, possible combos: %d\n",
-                symbolMap, brokenSpringGroups, unknownSymbolLocations, numCombos);
-        var validCombos = countCombos(symbolMap, brokenSpringGroups);
-        out.printf("Found %d valid combinations\n", validCombos);
-
-        return validCombos;
+        return countCombos(symbolMap, brokenSpringGroups);
     }
 
     static long countCombos(String symbolMap, List<Integer> brokenGroups) {
@@ -55,6 +45,11 @@ public class Day12 {
         }
         if (brokenGroups.isEmpty()) { // if the end of the spring groups array has been reached
             return symbolMap.contains("#") ? 0 : 1; // the remaining symbol map must contain no broken springs (#)
+        }
+
+        var key = Pair.create(symbolMap, brokenGroups);
+        if (memoizer.containsKey(key)) {
+            return memoizer.get(key);
         }
 
         var result = 0L;
@@ -81,7 +76,24 @@ public class Day12 {
             }
         }
 
+        memoizer.put(key, result);
         return result;
+    }
+
+    static String unfoldConfigString(String config) {
+        var tokens = config.split("\\s+");
+        var unfoldCfg = new StringBuilder();
+        var unfoldNums = new StringBuilder();
+
+        for (var i = 1; i <= 5; i++) {
+            unfoldCfg.append(tokens[0]);
+            unfoldNums.append(tokens[1]);
+            if (i < 5) {
+                unfoldCfg.append("?");
+                unfoldNums.append(",");
+            }
+        }
+        return unfoldCfg + " " + unfoldNums;
     }
 
 }

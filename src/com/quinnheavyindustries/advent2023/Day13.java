@@ -30,15 +30,15 @@ public class Day13 {
         Integer ignoreRow = smudgedResult.getLeft() != 0 ? smudgedResult.getLeft() : null;
         Integer ignoreColumn = smudgedResult.getRight() != 0 ? smudgedResult.getRight() : null;
 
-        var bytes = Utils.fillTwoDimensionalByteArray(input);
-        for (var i = 0; i < bytes.length; i++) {
-            for (var j = 0; j < bytes[0].length; j++) {
-                var originalByte = bytes[i][j];
-                Character replacementByte = originalByte == '.' ? '#' : '.';
+        var chars = Utils.fillTowDimensionalCharArray(input);
+        for (var i = 0; i < chars.length; i++) {
+            for (var j = 0; j < chars[0].length; j++) {
+                var originalByte = chars[i][j];
+                char replacementByte = originalByte == '.' ? '#' : '.';
 
-                bytes[i][j] = (byte) replacementByte.charValue();
-                var newResult = findReflections(Utils.byteMatrixToString(bytes), ignoreRow, ignoreColumn);
-                bytes[i][j] = originalByte;
+                chars[i][j] = replacementByte;
+                var newResult = findReflections(Utils.charMatrixToString(chars), ignoreRow, ignoreColumn);
+                chars[i][j] = originalByte;
 
                 if (!newResult.equals(ZERO_ZERO) && !newResult.equals(smudgedResult)) {
                     return calcFixedValue(smudgedResult, newResult);
@@ -74,9 +74,9 @@ public class Day13 {
     }
 
     static int findReflectiveColumn(String input, Integer ignoreColumn) {
-        var byteMatrix = Utils.fillTwoDimensionalByteArray(input);
-        var rotatedMatrix = Utils.rotateMatrixClockwise(byteMatrix);
-        var rotatedString = Utils.byteMatrixToString(rotatedMatrix);
+        var charMatrix = Utils.fillTowDimensionalCharArray(input);
+        var rotatedMatrix = Utils.rotateMatrixClockwise(charMatrix);
+        var rotatedString = Utils.charMatrixToString(rotatedMatrix);
         return findReflectiveRow(rotatedString, ignoreColumn);
     }
 

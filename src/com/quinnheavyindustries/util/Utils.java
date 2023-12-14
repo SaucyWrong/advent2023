@@ -38,21 +38,21 @@ public class Utils {
         return new ArrayList<>();
     }
 
-    public static Byte[][] fillTwoDimensionalByteArray(String input) {
+    public static char[][] fillTowDimensionalCharArray(String input) {
         var lines = input.split("\\n");
         var maxLineLength = Arrays.stream(lines).mapToInt(String::length).max().orElseThrow();
-        var result = new Byte[lines.length][maxLineLength];
+        var result = new char[lines.length][maxLineLength];
         for (var i = 0; i < lines.length; i++) {
             var line = lines[i];
             for (var j = 0; j < line.length(); j++) {
-                result[i][j] = (byte) line.charAt(j);
+                result[i][j] = line.charAt(j);
             }
         }
         return result;
     }
 
-    public static Byte[][] rotateMatrixClockwise(Byte[][] matrix) {
-        var result = new Byte[matrix[0].length][matrix.length];
+    public static char[][] rotateMatrixClockwise(char[][] matrix) {
+        var result = new char[matrix[0].length][matrix.length];
         for (var i = 0; i < matrix.length; i++) {
             var row = matrix[i];
             for (var j = 0; j < row.length; j++) {
@@ -62,11 +62,11 @@ public class Utils {
         return result;
     }
 
-    public static String byteMatrixToString(Byte[][] matrix) {
+    public static String charMatrixToString(char[][] matrix) {
         var result = new StringBuilder();
         for (var row : matrix) {
             for (var cell : row) {
-                result.append((char) cell.byteValue());
+                result.append(cell);
             }
             result.append("\n");
         }

@@ -1,6 +1,7 @@
 package com.quinnheavyindustries.advent2023;
 
 import com.quinnheavyindustries.util.Utils;
+import org.graalvm.collections.Pair;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -9,32 +10,60 @@ import java.util.List;
 import static java.lang.System.out;
 
 public class Day13 {
+
+    static Pair<Integer, Integer> ZERO_ZERO = Pair.create(0, 0);
+
     public static void main(String[] args) {
         var startTime = System.nanoTime();
         var patterns = Arrays.asList(Utils.readInputAsString("day13-puzzle").split("\\n{2}"));
         var solution = patterns.stream()
-                .mapToInt(Day13::findReflectionValues)
+                .mapToInt(Day13::fixSmudge)
                 .sum();
         var endTime = System.nanoTime();
+
         out.println("Solution: " + solution);
         out.println("Time: " + Duration.ofNanos(endTime - startTime));
     }
 
-    static int findReflectionValues(String input) {
-        var reflectiveRow = findReflectiveRow(input) * 100;
-        if (reflectiveRow == 0) {
-            var reflectiveColumn = findReflectiveColumn(input);
-            out.println("Reflected column value: " + reflectiveColumn);
-            return reflectiveColumn;
+    static int fixSmudge(String input) {
+        var smudgedResult = findReflections(input, null, null);
+        Integer ignoreRow = smudgedResult.getLeft() != 0 ? smudgedResult.getLeft() : null;
+        Integer ignoreColumn = smudgedResult.getRight() != 0 ? smudgedResult.getRight() : null;
+
+        var bytes = Utils.fillTwoDimensionalByteArray(input);
+        for (var i = 0; i < bytes.length; i++) {
+            for (var j = 0; j < bytes[0].length; j++) {
+                var originalByte = bytes[i][j];
+                Character replacementByte = originalByte == '.' ? '#' : '.';
+
+                bytes[i][j] = (byte) replacementByte.charValue();
+                var newResult = findReflections(Utils.byteMatrixToString(bytes), ignoreRow, ignoreColumn);
+                bytes[i][j] = originalByte;
+
+                if (!newResult.equals(ZERO_ZERO) && !newResult.equals(smudgedResult)) {
+                    return calcFixedValue(smudgedResult, newResult);
+                }
+            }
         }
-        out.println("Reflected row value: " + reflectiveRow);
-        return reflectiveRow;
+        throw new RuntimeException("No fix found");
     }
 
-    static int findReflectiveRow(String input) {
+    static int calcFixedValue(Pair<Integer, Integer> smudgedValue, Pair<Integer, Integer> fixedValue) {
+        if (!smudgedValue.getLeft().equals(fixedValue.getLeft()) && fixedValue.getLeft() != 0) {
+            return fixedValue.getLeft() * 100;
+        }
+        return fixedValue.getRight();
+    }
+
+    static Pair<Integer, Integer> findReflections(String input, Integer ignoreRow, Integer ignoreColumn) {
+        return Pair.create(findReflectiveRow(input, ignoreRow), findReflectiveColumn(input, ignoreColumn));
+    }
+
+    static int findReflectiveRow(String input, Integer ignoreRow) {
         var lines = Arrays.asList(input.split("\\n"));
 
         for (var i = 0; i < lines.size(); i++) {
+            if (ignoreRow != null && (i + 1) == ignoreRow) continue;
             var topSection = lines.subList(0 , i + 1);
             var bottomSection = lines.subList(i + 1, lines.size());
             if (isReflective(topSection, bottomSection)) {
@@ -44,11 +73,11 @@ public class Day13 {
         return 0;
     }
 
-    static int findReflectiveColumn(String input) {
+    static int findReflectiveColumn(String input, Integer ignoreColumn) {
         var byteMatrix = Utils.fillTwoDimensionalByteArray(input);
         var rotatedMatrix = Utils.rotateMatrixClockwise(byteMatrix);
         var rotatedString = Utils.byteMatrixToString(rotatedMatrix);
-        return findReflectiveRow(rotatedString);
+        return findReflectiveRow(rotatedString, ignoreColumn);
     }
 
     static boolean isReflective(List<String> top, List<String> bottom) {

@@ -1,6 +1,7 @@
 package com.quinnheavyindustries.advent2023;
 
 import com.quinnheavyindustries.util.Utils;
+import org.graalvm.collections.Pair;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -10,18 +11,24 @@ import static java.lang.System.out;
 
 public class Day14 {
 
-    public static Map<String, String> memoizedResults = new HashMap<>();
+    public static Map<String, Pair<String, Long>> memoizedResults = new HashMap<>();
     public static long spins = 1_000_000_000L;
+    public static boolean cycleTripped = false;
 
     public static void main(String[] args) {
         var startTime = System.nanoTime();
         var input = Utils.readInputAsString("day14-puzzle");
-        for (var i = 0; i < spins; i++) {
-            if (i % 1_000_000 == 0) {
-                // print a progress indicator every 1 million spins. It should overwrite the last line
-                out.print("\r" + (i / 1_000_000) + " million spins");
+        for (var i = 0L; i < spins; i++) {
+            if (memoizedResults.containsKey(input) && !cycleTripped) {
+                var cycleLength = i - memoizedResults.get(input).getRight();
+                var remainingSpins = spins - i;
+                var remainingSpinsModCycleLength = remainingSpins % cycleLength;
+                cycleTripped = true;
+                out.printf("\n--- Cycle detected at spin %d, cycle length %d, remaining spins %d, remaining spins mod cycle length %d ---\n", i, cycleLength, remainingSpins, remainingSpinsModCycleLength);
+                i = spins - remainingSpinsModCycleLength;
+                out.printf("--- Skipping all the way to spin %d ---\n", i);
             }
-            input = runOneSpinCycle(input);
+            input = runOneSpinCycle(input, i);
         }
         out.println("\n--- Finished spinning ---");
         var load = calculateLoadOnNorthernSupport(input);
@@ -30,9 +37,9 @@ public class Day14 {
         out.println("Time: " + Duration.ofNanos(endTime - startTime));
     }
 
-    public static String runOneSpinCycle(String input) {
+    public static String runOneSpinCycle(String input, long currentSpinCount) {
         if (memoizedResults.containsKey(input)) {
-            return memoizedResults.get(input);
+            return memoizedResults.get(input).getLeft();
         }
 
         var matrix = Utils.fillTowDimensionalCharArray(input);
@@ -47,7 +54,7 @@ public class Day14 {
         }
 
         var result = Utils.charMatrixToString(matrix);
-        memoizedResults.put(input, result);
+        memoizedResults.put(input, Pair.create(result, currentSpinCount));
         return result;
     }
 

@@ -1,5 +1,6 @@
 package com.quinnheavyindustries.advent2023;
 
+import com.quinnheavyindustries.util.Heading;
 import com.quinnheavyindustries.util.Point;
 import com.quinnheavyindustries.util.Utils;
 
@@ -155,68 +156,48 @@ public class Day10 {
             var stepsTaken = 1;
             while (stepsTaken == 1 || !pos.equals(maze.start)) {
                 var previous = new Point(pos.x(), pos.y());
-                pos = heading.nextPosition(pos);
-                heading = heading.nextHeading(maze.valueAt(pos));
+                pos = heading.next(pos);
+                heading = nextHeading(maze.valueAt(pos));
                 stepsTaken++;
                 maze.loopTiles.add(previous);
 //                maze.maze[previous.y()][previous.x()] = '#';
             }
             return stepsTaken;
         }
-    }
 
-    enum Heading {
-        N, S, W, E;
-
-        Point nextPosition(Point current) {
-            return switch (this) {
-                case N: yield new Point(current.x(), current.y() - 1);
-                case S: yield new Point(current.x(), current.y() + 1);
-                case W: yield new Point(current.x() - 1, current.y());
-                case E: yield new Point(current.x() + 1, current.y());
-            };
-        }
-
-        Heading nextHeading(char currentValue) {
-            if (currentValue == 'S' || currentValue == '#') { return N; }
-            return switch (this) {
-                case N -> switch (currentValue) {
-                    case '|' : yield N;
-                    case '7' : yield W;
-                    case 'F' : yield E;
+        private Heading nextHeading(char currentValue) {
+            if (currentValue == 'S' || currentValue == '#') { return Heading.North; }
+            return switch (heading) {
+                case North -> switch (currentValue) {
+                    case '|' : yield Heading.North;
+                    case '7' : yield Heading.West;
+                    case 'F' : yield Heading.East;
                     default:
                         throw new IllegalStateException("Unexpected value: " + currentValue);
                 };
-                case S -> switch (currentValue) {
-                    case '|' : yield S;
-                    case 'L' : yield E;
-                    case 'J' : yield W;
+                case South -> switch (currentValue) {
+                    case '|' : yield Heading.South;
+                    case 'L' : yield Heading.East;
+                    case 'J' : yield Heading.West;
                     default:
                         throw new IllegalStateException("Unexpected value: " + currentValue);
                 };
-                case W -> switch (currentValue) {
-                    case '-' : yield W;
-                    case 'L' : yield N;
-                    case 'F' : yield S;
+                case West -> switch (currentValue) {
+                    case '-' : yield Heading.West;
+                    case 'L' : yield Heading.North;
+                    case 'F' : yield Heading.South;
                     default:
                         throw new IllegalStateException("Unexpected value: " + currentValue);
                 };
-                case E -> switch (currentValue) {
-                    case '-' : yield E;
-                    case '7' : yield S;
-                    case 'J' : yield N;
+                case East -> switch (currentValue) {
+                    case '-' : yield Heading.East;
+                    case '7' : yield Heading.South;
+                    case 'J' : yield Heading.North;
                     default:
                         throw new IllegalStateException("Unexpected value: " + currentValue);
                 };
             };
         }
-
-        static Heading relative(Point src, Point dst) {
-            if (dst.isAbove(src)) { return N; }
-            if (dst.isBelow(src)) { return S; }
-            if (dst.isLeftOf(src)) { return W; }
-            if (dst.isRightOf(src)) { return E; }
-            throw new RuntimeException("Cannot determine relative direction of two equal points");
-        }
     }
+
 }

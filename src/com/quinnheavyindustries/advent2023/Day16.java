@@ -1,5 +1,6 @@
 package com.quinnheavyindustries.advent2023;
 
+import com.quinnheavyindustries.util.Heading;
 import com.quinnheavyindustries.util.Point;
 import com.quinnheavyindustries.util.PointAndHeading;
 import com.quinnheavyindustries.util.Utils;
@@ -15,19 +16,28 @@ public class Day16 {
     public static char[][] grid;
     public static Set<PointAndHeading> beams = new HashSet<>();
     public static Set<Point> energizedPoints = new HashSet<>();
+    public static Set<Integer> beamEnergies = new HashSet<>();
 
     public static void main(String[] args) {
         var startTime = nanoTime();
         var input = Utils.readInputAsString("day16-puzzle");
         grid = Utils.fillTowDimensionalCharArray(input);
-        followNewBeam(new PointAndHeading(new Point(0, 0), East));
+
+        getAllEdgePoints().stream()
+                .flatMap(point -> startingPoints(point.x(), point.y()).stream())
+                .forEach(startingPoint -> {
+                    followNewBeam(startingPoint);
+                    beamEnergies.add(energizedPoints.size());
+                    beams.clear();
+                    energizedPoints.clear();
+                });
+
         var endTime = nanoTime();
-        out.println("Solution: " + energizedPoints.size());
+        out.println("Solution: " + beamEnergies.stream().max(Integer::compareTo).orElseThrow());
         out.println("Total time: " + Duration.ofNanos(endTime - startTime));
     }
 
     static void followNewBeam(PointAndHeading origin) {
-//        out.printf("Following new beam from %s with heading %s\n", origin.point(), origin.heading());
         traceBeam(origin);
     }
 
@@ -42,19 +52,15 @@ public class Day16 {
             var nextPoint = nextPoints.getFirst();
             if (isOutOfBounds(nextPoint)) {
                 // beam will leave the grid
-//                out.printf("Beam left the grid at %s with heading %s\n", nextPoint.point(), nextPoint.heading());
                 return;
             }
             if (beams.contains(nextPoint)) {
-//                out.printf("Beam coincided with itself at %s with heading %s\n", nextPoint.point(), nextPoint.heading());
                 // beam will rejoin itself (it will overlap with an existing beam traveling in the same direction)
                 return;
             }
-//            out.printf("Beam continued to %s with heading %s\n", nextPoint.point(), nextPoint.heading());
             traceBeam(nextPoint);
         } else if (nextPoints.size() > 1) {
             // beam splits
-//            out.printf("Beam split at %s with heading %s\n", currentPoint.point(), currentPoint.heading());
             nextPoints.stream()
                     .filter(Day16::isInBounds)
                     .forEach(Day16::followNewBeam);
@@ -68,6 +74,64 @@ public class Day16 {
 
     static boolean isInBounds(PointAndHeading pointAndHeading) {
         return !isOutOfBounds(pointAndHeading);
+    }
+
+    static List<Point> getAllEdgePoints() {
+        var result = new ArrayList<Point>();
+        for (var y = 0; y < grid.length; y++) {
+            if (y == 0 || y == grid.length - 1) {
+                for (var x = 0; x < grid[0].length; x++) {
+                    result.add(new Point(x, y));
+                }
+            } else {
+                result.add(new Point(0, y));
+                result.add(new Point(grid[0].length - 1, y));
+            }
+        }
+        return result;
+    }
+
+    static List<PointAndHeading> startingPoints(int x, int y) {
+        // corner cases
+        if (x == 0 && y == 0) {
+            return List.of(
+                    new PointAndHeading(new Point(0, 0), East),
+                    new PointAndHeading(new Point(0, 0), South)
+            );
+        }
+        if (x == 0 && y == grid.length - 1) {
+            return List.of(
+                    new PointAndHeading(new Point(0, grid.length - 1), East),
+                    new PointAndHeading(new Point(0, grid.length - 1), North)
+            );
+        }
+        if (x == grid[0].length - 1 && y == 0) {
+            return List.of(
+                    new PointAndHeading(new Point(grid[0].length - 1, 0), West),
+                    new PointAndHeading(new Point(grid[0].length - 1, 0), South)
+            );
+        }
+        if (x == grid[0].length - 1 && y == grid.length - 1) {
+            return List.of(
+                    new PointAndHeading(new Point(grid[0].length - 1, grid.length - 1), West),
+                    new PointAndHeading(new Point(grid[0].length - 1, grid.length - 1), North)
+            );
+        }
+
+        // edge cases
+        Heading heading;
+        if (x == 0) {
+            heading = East;
+        } else if (x == grid[0].length - 1) {
+            heading = West;
+        } else if (y == 0) {
+            heading = South;
+        } else if (y == grid.length - 1) {
+            heading = North;
+        } else {
+            throw new IllegalArgumentException("Point is not on the edge of the grid");
+        }
+        return List.of(new PointAndHeading(new Point(x, y), heading));
     }
 
     static List<PointAndHeading> nextPointsAndHeading(PointAndHeading current) {

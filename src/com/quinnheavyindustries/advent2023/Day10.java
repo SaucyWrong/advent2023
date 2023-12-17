@@ -1,6 +1,6 @@
 package com.quinnheavyindustries.advent2023;
 
-import com.quinnheavyindustries.util.Heading;
+import com.quinnheavyindustries.util.Direction;
 import com.quinnheavyindustries.util.Point;
 import com.quinnheavyindustries.util.Utils;
 
@@ -52,19 +52,14 @@ public class Day10 {
         }
 
         char valueAt(Point point) {
-            if (isInBounds(point)) {
+            if (point.isInBounds(maze)) {
                 return maze[point.y()][point.x()];
             }
             throw new RuntimeException("Invalid coordinate: " + point);
         }
 
-        boolean isInBounds(Point point) {
-            return point.x() >= 0 && point.x() < width &&
-                    point.y() >= 0 && point.y() < height;
-        }
-
         boolean isConnectedToStart(Point point) {
-            if (isInBounds(point)) {
+            if (point.isInBounds(maze)) {
                 var valueAtPoint = maze[point.y()][point.x()];
 
                 return (point.isRightOf(start) && Set.of('-', '7', 'J').contains(valueAtPoint)) ||
@@ -88,7 +83,7 @@ public class Day10 {
             var pointsToFlood = lastFlooded.stream()
                     .map(Point::getAllNeighbors)
                     .flatMap(List::stream)
-                    .filter(this::isInBounds)
+                    .filter(point -> point.isInBounds(maze))
                     .filter(this::permitsWater)
                     .collect(Collectors.toSet());
 
@@ -132,7 +127,7 @@ public class Day10 {
     static class Runner {
         Maze maze;
         Point pos;
-        Heading heading;
+        Direction direction;
 
         public Runner(Maze maze) {
             this.maze = maze;
@@ -143,21 +138,21 @@ public class Day10 {
         void determineInitialHeading() {
             if (pos == null) { throw new RuntimeException("start must not be null"); }
             var firstMove = pos.getCardinalNeighbors().stream()
-                    .filter(maze::isInBounds)
+                    .filter(point -> point.isInBounds(maze.maze))
                     .filter(maze::isConnectedToStart)
                     .findFirst()
                     .orElseThrow();
-            heading = Heading.relative(pos, firstMove);
+            direction = Direction.relative(pos, firstMove);
             out.printf("Runner start: %s, first move: %s (%s), initial heading: %s\n",
-                    pos, firstMove, maze.valueAt(firstMove), heading);
+                    pos, firstMove, maze.valueAt(firstMove), direction);
         }
 
         public int run() {
             var stepsTaken = 1;
             while (stepsTaken == 1 || !pos.equals(maze.start)) {
                 var previous = new Point(pos.x(), pos.y());
-                pos = heading.next(pos);
-                heading = nextHeading(maze.valueAt(pos));
+                pos = direction.next(pos);
+                direction = nextHeading(maze.valueAt(pos));
                 stepsTaken++;
                 maze.loopTiles.add(previous);
 //                maze.maze[previous.y()][previous.x()] = '#';
@@ -165,37 +160,38 @@ public class Day10 {
             return stepsTaken;
         }
 
-        private Heading nextHeading(char currentValue) {
-            if (currentValue == 'S' || currentValue == '#') { return Heading.North; }
-            return switch (heading) {
+        private Direction nextHeading(char currentValue) {
+            if (currentValue == 'S' || currentValue == '#') { return Direction.North; }
+            return switch (direction) {
                 case North -> switch (currentValue) {
-                    case '|' : yield Heading.North;
-                    case '7' : yield Heading.West;
-                    case 'F' : yield Heading.East;
+                    case '|' : yield Direction.North;
+                    case '7' : yield Direction.West;
+                    case 'F' : yield Direction.East;
                     default:
                         throw new IllegalStateException("Unexpected value: " + currentValue);
                 };
                 case South -> switch (currentValue) {
-                    case '|' : yield Heading.South;
-                    case 'L' : yield Heading.East;
-                    case 'J' : yield Heading.West;
+                    case '|' : yield Direction.South;
+                    case 'L' : yield Direction.East;
+                    case 'J' : yield Direction.West;
                     default:
                         throw new IllegalStateException("Unexpected value: " + currentValue);
                 };
                 case West -> switch (currentValue) {
-                    case '-' : yield Heading.West;
-                    case 'L' : yield Heading.North;
-                    case 'F' : yield Heading.South;
+                    case '-' : yield Direction.West;
+                    case 'L' : yield Direction.North;
+                    case 'F' : yield Direction.South;
                     default:
                         throw new IllegalStateException("Unexpected value: " + currentValue);
                 };
                 case East -> switch (currentValue) {
-                    case '-' : yield Heading.East;
-                    case '7' : yield Heading.South;
-                    case 'J' : yield Heading.North;
+                    case '-' : yield Direction.East;
+                    case '7' : yield Direction.South;
+                    case 'J' : yield Direction.North;
                     default:
                         throw new IllegalStateException("Unexpected value: " + currentValue);
                 };
+                default -> throw new IllegalStateException("Unexpected value: " + direction);
             };
         }
     }

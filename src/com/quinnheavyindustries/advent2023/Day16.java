@@ -1,20 +1,20 @@
 package com.quinnheavyindustries.advent2023;
 
-import com.quinnheavyindustries.util.Heading;
+import com.quinnheavyindustries.util.Direction;
 import com.quinnheavyindustries.util.Point;
-import com.quinnheavyindustries.util.PointAndHeading;
+import com.quinnheavyindustries.util.PointAndDirection;
 import com.quinnheavyindustries.util.Utils;
 
 import java.time.Duration;
 import java.util.*;
 
-import static com.quinnheavyindustries.util.Heading.*;
+import static com.quinnheavyindustries.util.Direction.*;
 import static java.lang.System.*;
 
 public class Day16 {
 
     public static char[][] grid;
-    public static Set<PointAndHeading> beams = new HashSet<>();
+    public static Set<PointAndDirection> beams = new HashSet<>();
     public static Set<Point> energizedPoints = new HashSet<>();
     public static Set<Integer> beamEnergies = new HashSet<>();
 
@@ -37,12 +37,12 @@ public class Day16 {
         out.println("Total time: " + Duration.ofNanos(endTime - startTime));
     }
 
-    static void followNewBeam(PointAndHeading origin) {
+    static void followNewBeam(PointAndDirection origin) {
         traceBeam(origin);
     }
 
     // propagate beam from origin point and heading until it reaches a splitter, leaves the grid, or rejoins itself
-    static void traceBeam(PointAndHeading currentPoint) {
+    static void traceBeam(PointAndDirection currentPoint) {
         beams.add(currentPoint);
         energizedPoints.add(currentPoint.point());
 
@@ -67,13 +67,13 @@ public class Day16 {
         }
     }
 
-    static boolean isOutOfBounds(PointAndHeading pointAndHeading) {
-        var point = pointAndHeading.point();
+    static boolean isOutOfBounds(PointAndDirection pointAndDirection) {
+        var point = pointAndDirection.point();
         return point.x() < 0 || point.x() >= grid[0].length || point.y() < 0 || point.y() >= grid.length;
     }
 
-    static boolean isInBounds(PointAndHeading pointAndHeading) {
-        return !isOutOfBounds(pointAndHeading);
+    static boolean isInBounds(PointAndDirection pointAndDirection) {
+        return !isOutOfBounds(pointAndDirection);
     }
 
     static List<Point> getAllEdgePoints() {
@@ -91,79 +91,83 @@ public class Day16 {
         return result;
     }
 
-    static List<PointAndHeading> startingPoints(int x, int y) {
+    static List<PointAndDirection> startingPoints(int x, int y) {
         // corner cases
         if (x == 0 && y == 0) {
             return List.of(
-                    new PointAndHeading(new Point(0, 0), East),
-                    new PointAndHeading(new Point(0, 0), South)
+                    new PointAndDirection(new Point(0, 0), East),
+                    new PointAndDirection(new Point(0, 0), South)
             );
         }
         if (x == 0 && y == grid.length - 1) {
             return List.of(
-                    new PointAndHeading(new Point(0, grid.length - 1), East),
-                    new PointAndHeading(new Point(0, grid.length - 1), North)
+                    new PointAndDirection(new Point(0, grid.length - 1), East),
+                    new PointAndDirection(new Point(0, grid.length - 1), North)
             );
         }
         if (x == grid[0].length - 1 && y == 0) {
             return List.of(
-                    new PointAndHeading(new Point(grid[0].length - 1, 0), West),
-                    new PointAndHeading(new Point(grid[0].length - 1, 0), South)
+                    new PointAndDirection(new Point(grid[0].length - 1, 0), West),
+                    new PointAndDirection(new Point(grid[0].length - 1, 0), South)
             );
         }
         if (x == grid[0].length - 1 && y == grid.length - 1) {
             return List.of(
-                    new PointAndHeading(new Point(grid[0].length - 1, grid.length - 1), West),
-                    new PointAndHeading(new Point(grid[0].length - 1, grid.length - 1), North)
+                    new PointAndDirection(new Point(grid[0].length - 1, grid.length - 1), West),
+                    new PointAndDirection(new Point(grid[0].length - 1, grid.length - 1), North)
             );
         }
 
         // edge cases
-        Heading heading;
+        Direction direction;
         if (x == 0) {
-            heading = East;
+            direction = East;
         } else if (x == grid[0].length - 1) {
-            heading = West;
+            direction = West;
         } else if (y == 0) {
-            heading = South;
+            direction = South;
         } else if (y == grid.length - 1) {
-            heading = North;
+            direction = North;
         } else {
             throw new IllegalArgumentException("Point is not on the edge of the grid");
         }
-        return List.of(new PointAndHeading(new Point(x, y), heading));
+        return List.of(new PointAndDirection(new Point(x, y), direction));
     }
 
-    static List<PointAndHeading> nextPointsAndHeading(PointAndHeading current) {
-        if (isOutOfBounds(current)) { throw new ArrayIndexOutOfBoundsException("current point and heading is out of bounds"); }
+    static List<PointAndDirection> nextPointsAndHeading(PointAndDirection current) {
+        if (isOutOfBounds(current)) { throw new ArrayIndexOutOfBoundsException("positionAndDirection point and heading is out of bounds"); }
         var currentPoint = current.point();
-        var currentHeading = current.heading();
+        var currentHeading = current.direction();
         char currentChar = grid[current.point().y()][current.point().x()];
 
         return switch (currentChar) {
-            case '.' -> List.of(new PointAndHeading(currentHeading.next(currentPoint), currentHeading));
+            case '.' -> List.of(new PointAndDirection(currentHeading.next(currentPoint), currentHeading));
             case '/' -> switch (currentHeading) {
-                case North -> List.of(new PointAndHeading(East.next(currentPoint), East));
-                case South -> List.of(new PointAndHeading(West.next(currentPoint), West));
-                case East -> List.of(new PointAndHeading(North.next(currentPoint), North));
-                case West -> List.of(new PointAndHeading(South.next(currentPoint), South));
+                case North -> List.of(new PointAndDirection(East.next(currentPoint), East));
+                case South -> List.of(new PointAndDirection(West.next(currentPoint), West));
+                case East -> List.of(new PointAndDirection(North.next(currentPoint), North));
+                case West -> List.of(new PointAndDirection(South.next(currentPoint), South));
+                case None -> throw new IllegalArgumentException("None is not a valid heading");
             };
             case '\\' -> switch (currentHeading) {
-                case North -> List.of(new PointAndHeading(West.next(currentPoint), West));
-                case South -> List.of(new PointAndHeading(East.next(currentPoint), East));
-                case East -> List.of(new PointAndHeading(South.next(currentPoint), South));
-                case West -> List.of(new PointAndHeading(North.next(currentPoint), North));
+                case North -> List.of(new PointAndDirection(West.next(currentPoint), West));
+                case South -> List.of(new PointAndDirection(East.next(currentPoint), East));
+                case East -> List.of(new PointAndDirection(South.next(currentPoint), South));
+                case West -> List.of(new PointAndDirection(North.next(currentPoint), North));
+                case None -> throw new IllegalArgumentException("None is not a valid heading");
             };
             case '-' -> switch (currentHeading) {
-                case East, West -> List.of(new PointAndHeading(currentHeading.next(currentPoint), currentHeading));
+                case East, West -> List.of(new PointAndDirection(currentHeading.next(currentPoint), currentHeading));
+                case None -> throw new IllegalArgumentException("None is not a valid heading");
                 default -> currentHeading.orthogonals().stream()
-                        .map(heading -> new PointAndHeading(heading.next(currentPoint), heading))
+                        .map(direction -> new PointAndDirection(direction.next(currentPoint), direction))
                         .toList();
             };
             case '|' -> switch (currentHeading) {
-                case North, South -> List.of(new PointAndHeading(currentHeading.next(currentPoint), currentHeading));
+                case North, South -> List.of(new PointAndDirection(currentHeading.next(currentPoint), currentHeading));
+                case None -> throw new IllegalArgumentException("None is not a valid heading");
                 default -> currentHeading.orthogonals().stream()
-                        .map(heading -> new PointAndHeading(heading.next(currentPoint), heading))
+                        .map(direction -> new PointAndDirection(direction.next(currentPoint), direction))
                         .toList();
             };
             default -> throw new IllegalArgumentException("Unknown value: " + currentChar);

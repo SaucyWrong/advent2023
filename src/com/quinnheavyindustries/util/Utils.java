@@ -51,6 +51,19 @@ public class Utils {
         return result;
     }
 
+    public static Integer[][] fillTwoDimensionsalIntArray(String input) {
+        var lines = input.split("\\n");
+        var maxLineLength = Arrays.stream(lines).mapToInt(String::length).max().orElseThrow();
+        var result = new Integer[lines.length][maxLineLength];
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i];
+            for (var j = 0; j < line.length(); j++) {
+                result[i][j] = Integer.parseInt(String.valueOf(line.charAt(j)));
+            }
+        }
+        return result;
+    }
+
     public static char[][] rotateMatrixClockwise(char[][] matrix) {
         var result = new char[matrix[0].length][matrix.length];
         for (var i = 0; i < matrix.length; i++) {

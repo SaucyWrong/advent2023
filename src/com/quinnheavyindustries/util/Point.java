@@ -49,8 +49,16 @@ public record Point(int x, int y) implements Comparable<Point> {
         return x > other.x();
     }
 
-    public long gridDistanceTo(Point other) {
+    public long manhattanDistance(Point other) {
         return Math.abs(x - other.x()) + Math.abs(y - other.y());
+    }
+
+    public <T> boolean isInBounds(T[][] grid) {
+        return y >= 0 && y < grid.length && x >= 0 && x < grid[0].length;
+    }
+
+    public <T> boolean isOutOfBounds(T[][] grid) {
+        return !isInBounds(grid);
     }
 
     @Override

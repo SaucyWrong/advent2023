@@ -121,7 +121,7 @@ public class Day11 {
                         .filter(y -> y > minY && y < maxY)
                         .toList().size();
 
-                var rawDistance = coordinates.first().gridDistanceTo(coordinates.last());
+                var rawDistance = coordinates.first().manhattanDistance(coordinates.last());
                 var totalExpansions = expansionColumnsTraversed + expansionRowsTraversed;
                 var expandedDistance = (EXPANSION_DISTANCE * totalExpansions) - totalExpansions;
                 var totalDistance = rawDistance + expandedDistance;

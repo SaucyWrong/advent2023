@@ -5,16 +5,21 @@ import java.util.Set;
 public enum Direction {
     North, South, West, East, None;
 
+
     public Point next(Point current) {
+        return next(current, 1);
+    }
+
+    public Point next(Point current, int distance) {
         return switch (this) {
             case North:
-                yield new Point(current.x(), current.y() - 1);
+                yield new Point(current.x(), current.y() - distance);
             case South:
-                yield new Point(current.x(), current.y() + 1);
+                yield new Point(current.x(), current.y() + distance);
             case West:
-                yield new Point(current.x() - 1, current.y());
+                yield new Point(current.x() - distance, current.y());
             case East:
-                yield new Point(current.x() + 1, current.y());
+                yield new Point(current.x() + distance, current.y());
             case None:
                 yield current;
         };
@@ -44,13 +49,4 @@ public enum Direction {
         };
     }
 
-    public boolean opposes(Direction other) {
-        return switch (this) {
-            case North -> other == South;
-            case South -> other == North;
-            case West -> other == East;
-            case East -> other == West;
-            case None -> false;
-        };
-    }
 }

@@ -33,8 +33,10 @@ public class Day17 {
         while (!queue.isEmpty()) {
             var state = queue.poll();
             if (state.positionAndDirection.point().equals(end)) {
-                totalHeatLoss = state.heatLoss;
-                break;
+                if (state.consecutiveSteps >= 4) {
+                    totalHeatLoss = state.heatLoss;
+                    break;
+                }
             }
             if (state.positionAndDirection.point().isOutOfBounds(grid)) {
                 continue;
@@ -45,8 +47,8 @@ public class Day17 {
             visited.add(state);
 
             // calculate possible next states:
-            // - you can continue forward if you haven't already taken three steps in a row
-            if (state.consecutiveSteps < 3 && state.positionAndDirection.direction() != None) {
+            // - you can continue forward if you haven't already taken 10 steps in a row
+            if (state.consecutiveSteps < 10 && state.positionAndDirection.direction() != None) {
                 var nextPoint = state.positionAndDirection.next();
                 if (nextPoint.point().isInBounds(grid)) {
                     var nextHeatLoss = state.heatLoss + heatLossAt(nextPoint.point(), grid);
@@ -54,13 +56,15 @@ public class Day17 {
                 }
             }
 
-            // - or you can proceed in an orthogonal direction
-            var orthogonalDirections = state.positionAndDirection.direction().orthogonals();
-            for (var orthogonalDirection : orthogonalDirections) {
-                var nextPoint = state.positionAndDirection.next(orthogonalDirection);
-                if (nextPoint.point().isInBounds(grid)) {
-                    var nextHeatLoss = state.heatLoss + heatLossAt(nextPoint.point(), grid);
-                    queue.offer(new State(nextHeatLoss, nextPoint, 1));
+            // - or you can proceed in an orthogonal direction if you've gone at least 4 steps in a row
+            if (state.consecutiveSteps >= 4 || state.positionAndDirection.direction() == None) {
+                var orthogonalDirections = state.positionAndDirection.direction().orthogonals();
+                for (var orthogonalDirection : orthogonalDirections) {
+                    var nextPoint = state.positionAndDirection.next(orthogonalDirection);
+                    if (nextPoint.point().isInBounds(grid)) {
+                        var nextHeatLoss = state.heatLoss + heatLossAt(nextPoint.point(), grid);
+                        queue.offer(new State(nextHeatLoss, nextPoint, 1));
+                    }
                 }
             }
         }

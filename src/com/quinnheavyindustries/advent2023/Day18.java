@@ -13,7 +13,7 @@ import static java.lang.System.out;
 
 public class Day18 {
 
-    public static Pattern diggerPattern = Pattern.compile("^(?<direction>[DULR]) (?<length>\\d+) \\((?<hexColor>#\\w{6})\\)$");
+    public static Pattern diggerPattern = Pattern.compile("^(?<direction>[DULR]) (?<length>\\d+) \\(#(?<hexColor>\\w{6})\\)$");
 
     public static void main(String[] args) {
         var startTime = nanoTime();
@@ -35,8 +35,10 @@ public class Day18 {
             if (!matcher.matches()) {
                 throw new IllegalArgumentException("Invalid instruction: " + instruction);
             }
-            var direction = fromChar(matcher.group("direction").charAt(0));
-            var length = Integer.parseInt(matcher.group("length"));
+            var hexValue = matcher.group("hexColor");
+            var length = Integer.parseInt(hexValue.substring(0, 5), 16);
+            var directionCode = Integer.parseInt(hexValue.substring(5), 16);
+            var direction = fromInteger(directionCode);
             var newVertex = direction.next(position, length);
             vertices.add(newVertex);
             position = newVertex;
@@ -61,13 +63,13 @@ public class Day18 {
         return Math.abs(area) / 2;
     }
 
-    static Direction fromChar(char c) {
-        return switch (c) {
-            case 'U' -> Direction.North;
-            case 'D' -> Direction.South;
-            case 'L' -> Direction.West;
-            case 'R' -> Direction.East;
-            default -> throw new IllegalArgumentException("Invalid char: " + c);
+    static Direction fromInteger(int i) {
+        return switch (i) {
+            case 3 -> Direction.North;
+            case 1 -> Direction.South;
+            case 2 -> Direction.West;
+            case 0 -> Direction.East;
+            default -> throw new IllegalArgumentException("Invalid code: " + i);
         };
     }
 
